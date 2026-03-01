@@ -2,7 +2,7 @@
 
 import { Command } from "commander";
 import { runApply } from "./apply";
-import { runLogin } from "./auth";
+import { checkStoredPinterestAuth, clearSavedAuthState, runLogin } from "./auth";
 import { runDiagnose } from "./diagnose";
 import {
   AppConfig,
@@ -81,6 +81,44 @@ program
       promptForEnter: Boolean(options.prompt),
       timeoutMs: parseInteger(options.timeoutMs, "timeout-ms")
     });
+  });
+
+program
+  .command("auth-check")
+  .description("Validate that saved auth state is still an authenticated Pinterest session.")
+  .option("--timeout-ms <ms>", "Timeout for auth check navigation in milliseconds.", "30000")
+  .option("--quiet", "Suppress success/failure output and rely on exit code.", false)
+  .action(async (options: AuthCheckCliOptions) => {
+    const result = await checkStoredPinterestAuth({
+      timeoutMs: parseInteger(options.timeoutMs, "timeout-ms")
+    });
+
+    if (result.authenticated) {
+      if (!options.quiet) {
+        console.log("Pinterest auth session is valid.");
+      }
+      return;
+    }
+
+    if (!options.quiet) {
+      console.error(`Pinterest auth session is invalid: ${result.reason}`);
+      throw new Error(result.reason);
+    }
+
+    process.exitCode = 1;
+  });
+
+program
+  .command("logout")
+  .description("Delete saved Playwright auth state.")
+  .action(() => {
+    const removed = clearSavedAuthState();
+    if (removed) {
+      console.log(`Removed auth state at ${formatPathForLog(PATHS.authState)}.`);
+      return;
+    }
+
+    console.log(`No auth state found at ${formatPathForLog(PATHS.authState)}.`);
   });
 
 program
@@ -182,6 +220,11 @@ interface ApplyCliOptions {
 interface LoginCliOptions {
   prompt?: boolean;
   timeoutMs: string;
+}
+
+interface AuthCheckCliOptions {
+  timeoutMs: string;
+  quiet?: boolean;
 }
 
 interface DiagnoseCliOptions {

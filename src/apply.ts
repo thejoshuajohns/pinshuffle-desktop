@@ -119,14 +119,16 @@ export async function runApply(config: AppConfig, options: ApplyOptions): Promis
     await session.browser.close();
   }
 
-  const totalSaved = state.savedIds.length;
+  const selectedPinIds = new Set(selectedPins.map((pin) => pin.id));
+  const totalSaved = state.savedIds.filter((id) => selectedPinIds.has(id)).length;
+  const selectionFailures = state.failures.filter((failure) => selectedPinIds.has(failure.id));
   const remaining = selectedPins.length - totalSaved;
 
   console.log(`Apply finished. Saved ${totalSaved}/${selectedPins.length} pins.`);
-  if (state.failures.length > 0) {
-    console.log(`Failures: ${state.failures.length} (see ${PATHS.state} and ${PATHS.debugDir})`);
+  if (selectionFailures.length > 0) {
+    console.log(`Failures: ${selectionFailures.length} (see ${PATHS.state} and ${PATHS.debugDir})`);
   }
-  if (remaining > 0 && state.failures.length === 0) {
+  if (remaining > 0 && selectionFailures.length === 0) {
     console.log(`Remaining pins skipped due to resume filtering: ${remaining}`);
   }
 }
