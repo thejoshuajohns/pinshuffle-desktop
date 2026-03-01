@@ -377,7 +377,16 @@ async function runFullPipeline(options = {}) {
       }
 
       if (step.name === "login") {
-        await refreshLoginStatusFromDisk();
+        const connected = await refreshLoginStatusFromDisk();
+        if (!connected) {
+          appendLog("stderr", "Login command finished, but the saved session is not authenticated.\n");
+          markWizardStep(step.name, "error");
+          setLoginState("error", "Login session verification failed.");
+          setBanner("error", "Run failed at login.");
+          setRunState("error", "Failed at login.");
+          setBoardState("info", "Board step did not run.");
+          return;
+        }
         setLoginState("success", "Login connected successfully.");
       }
 
@@ -418,6 +427,7 @@ async function runSingleCommand(name, args, options = {}) {
     }
 
     const ok = await executeCommand(name, args);
+    let finalOk = ok;
 
     if (ok && options.reloadConfigOnSuccess) {
       await loadConfigFromDisk();
@@ -425,10 +435,17 @@ async function runSingleCommand(name, args, options = {}) {
 
     if (name === "login") {
       if (ok) {
-        await refreshLoginStatusFromDisk();
-        setLoginState("success", "Login connected successfully.");
-        setBanner("success", "Pinterest login connected.");
+        const connected = await refreshLoginStatusFromDisk();
+        if (connected) {
+          setLoginState("success", "Login connected successfully.");
+          setBanner("success", "Pinterest login connected.");
+        } else {
+          finalOk = false;
+          setLoginState("error", "Login session verification failed.");
+          setBanner("error", "Pinterest login was not verified.");
+        }
       } else {
+        finalOk = false;
         setLoginState("error", "Login failed or was canceled.");
         setBanner("error", "Pinterest login failed.");
       }
@@ -447,7 +464,7 @@ async function runSingleCommand(name, args, options = {}) {
     }
 
     if (pipelineSteps.includes(name)) {
-      markWizardStep(name, ok ? "success" : "error");
+      markWizardStep(name, finalOk ? "success" : "error");
     }
   });
 }
@@ -715,20 +732,27 @@ function applySpeedProfileDefaults(profile, options = {}) {
 }
 
 async function refreshLoginStatusFromDisk() {
-  try {
-    const authState = await api.readJson(".auth/storageState.json");
-    const cookies = Array.isArray(authState?.cookies) ? authState.cookies : [];
-    const hasSessionCookie = cookies.some((cookie) => String(cookie.name || "").toLowerCase().includes("sess"));
-
-    if (hasSessionCookie) {
-      setLoginState("success", "Already connected.");
-      return;
-    }
-  } catch {
-    // Ignore parse or file read errors.
+  const authState = await api.readJson(".auth/storageState.json");
+  if (!authState) {
+    setLoginState("idle", "Not connected yet.");
+    return false;
   }
 
-  setLoginState("idle", "Not connected yet.");
+  try {
+    const result = await api.runCli({
+      args: ["auth-check", "--quiet", "--timeout-ms", "30000"]
+    });
+
+    if (result.exitCode === 0) {
+      setLoginState("success", "Already connected.");
+      return true;
+    }
+  } catch {
+    // Ignore check failures; fall back to disconnected state.
+  }
+
+  setLoginState("idle", "Not connected. Run Login again.");
+  return false;
 }
 
 function resetSignalState() {
