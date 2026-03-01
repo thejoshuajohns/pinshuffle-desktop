@@ -1,6 +1,12 @@
-# PinShuffle (CLI + Desktop Shell)
+<p align="center">
+  <img src="desktop/assets/icon.png" alt="PinShuffle Logo" width="140" />
+</p>
 
-CLI automation that creates or reuses a destination Pinterest board and saves a randomized order of pins from one or more source boards.
+# PinShuffle
+
+> One-click Pinterest board shuffler: paste a board URL, run, and get a fresh shuffled board.
+
+PinShuffle creates or reuses a destination Pinterest board and saves a randomized order of pins from one or more source boards.
 
 This tool uses **headed UI automation** (Playwright). There is no stable public Pinterest API path used.
 
