@@ -14,6 +14,8 @@ This tool uses **headed UI automation** (Playwright). There is no stable public 
 
 - `init` creates `config.json`
 - `login` stores Playwright `storageState` after manual login
+- `auth-check` validates whether saved auth state is still authenticated
+- `logout` removes saved Playwright auth state
 - `scrape` captures pins from source board URLs into `pins.json`
 - `plan` shuffles pins (Fisher–Yates + optional seed) into `plan.json`
 - `apply` saves pins in planned order to destination board
@@ -83,6 +85,12 @@ Optional selector diagnostics:
 npm run diagnose
 ```
 
+Check whether your saved session is still valid:
+
+```bash
+npm run auth-check
+```
+
 ## Desktop App Shell
 
 Launch the desktop wrapper:
@@ -97,6 +105,7 @@ Desktop shell notes:
 - Default flow is one field + one button: paste board URL and click `Run Shuffle`.
 - `Run Shuffle` auto-generates a fresh destination board name and runs `init -> login -> scrape -> plan -> apply`.
 - `Connect Pinterest` runs `login --no-prompt` so users can pre-authorize once.
+- Login status cards are validated with a live auth probe so stale sessions are not shown as connected.
 - Optional `Preview only` runs dry mode without saving.
 - `Advanced Settings` contains full manual controls, diagnostics, and power-user options.
 - Clear confirmation cards show login status, run status, and board result in plain language.
@@ -191,8 +200,19 @@ Creates `config.json` with:
 
 - Opens Pinterest login page in headed mode.
 - You log in manually.
-- Terminal mode: press Enter to persist storage state.
+- Terminal mode: press Enter, then login is verified before storage state is persisted.
 - Desktop mode (or CLI with `--no-prompt`): session is auto-detected and saved.
+
+### `auth-check`
+
+- Uses `.auth/storageState.json`.
+- Opens a short headless probe to verify Pinterest still accepts the session.
+- Exits non-zero if auth is missing/expired/logged out.
+
+### `logout`
+
+- Deletes `.auth/storageState.json`.
+- Useful if you want to force a clean re-login.
 
 ### `scrape`
 
@@ -243,6 +263,8 @@ Creates `config.json` with:
 ## Troubleshooting
 
 - Missing auth state: run `npm run login`.
+- Session validity check: run `npm run auth-check`.
+- Clear saved auth state: run `npm run logout`.
 - Empty `pins.json`: increase `maxPinsToLoad` and verify source board URL.
 - Frequent save failures: lower run intensity via higher delay range.
 - Repeated rate-limit messages: stop and retry later; do not brute-force retries.

@@ -8,6 +8,8 @@
     "start": "tsx src/cli.ts",
     "init": "tsx src/cli.ts init",
     "login": "tsx src/cli.ts login",
+    "auth-check": "tsx src/cli.ts auth-check",
+    "logout": "tsx src/cli.ts logout",
     "scrape": "tsx src/cli.ts scrape",
     "plan": "tsx src/cli.ts plan",
     "apply": "tsx src/cli.ts apply",

@@ -37,7 +37,8 @@ function resolveNodeBinary() {
 
 function normalizeRelativePath(relativePath) {
   const fullPath = path.resolve(projectRoot, relativePath);
-  if (!fullPath.startsWith(projectRoot)) {
+  const relative = path.relative(projectRoot, fullPath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
     throw new Error("Path is outside project root.");
   }
   return fullPath;
