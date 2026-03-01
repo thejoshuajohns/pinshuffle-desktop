@@ -10,6 +10,8 @@ const el = {
   simpleDryRun: document.getElementById("simpleDryRun"),
   simpleRun: document.getElementById("simpleRun"),
   simpleConnect: document.getElementById("simpleConnect"),
+  simpleAuthCheck: document.getElementById("simpleAuthCheck"),
+  simpleLogout: document.getElementById("simpleLogout"),
   simpleDestinationPreview: document.getElementById("simpleDestinationPreview"),
   confirmBanner: document.getElementById("confirmBanner"),
   loginCard: document.getElementById("loginCard"),
@@ -40,6 +42,8 @@ const el = {
   saveConfig: document.getElementById("saveConfig"),
   runAll: document.getElementById("runAll"),
   login: document.getElementById("login"),
+  authCheck: document.getElementById("authCheck"),
+  logout: document.getElementById("logout"),
   scrape: document.getElementById("scrape"),
   plan: document.getElementById("plan"),
   diagnose: document.getElementById("diagnose"),
@@ -52,6 +56,8 @@ const el = {
 const commandButtons = [
   el.simpleRun,
   el.simpleConnect,
+  el.simpleAuthCheck,
+  el.simpleLogout,
   el.loadConfig,
   el.saveConfig,
   el.generateBoardName,
@@ -59,6 +65,8 @@ const commandButtons = [
   el.loadAllPins,
   el.runAll,
   el.login,
+  el.authCheck,
+  el.logout,
   el.scrape,
   el.plan,
   el.diagnose,
@@ -95,9 +103,15 @@ el.simpleRun.addEventListener("click", () => {
 });
 
 el.simpleConnect.addEventListener("click", () => {
-  setBanner("running", "Waiting for Pinterest login. Complete login in the browser window.");
-  setLoginState("running", "Login in progress...");
-  void runSingleCommand("login", ["login", "--no-prompt", "--timeout-ms", "900000"]);
+  void runLoginFromUi();
+});
+
+el.simpleAuthCheck.addEventListener("click", () => {
+  void runAuthCheckFromUi();
+});
+
+el.simpleLogout.addEventListener("click", () => {
+  void runLogoutFromUi();
 });
 
 el.loadConfig.addEventListener("click", () => {
@@ -131,9 +145,15 @@ el.runAll.addEventListener("click", () => {
 });
 
 el.login.addEventListener("click", () => {
-  setBanner("running", "Waiting for Pinterest login. Complete login in the browser window.");
-  setLoginState("running", "Login in progress...");
-  void runSingleCommand("login", ["login", "--no-prompt", "--timeout-ms", "900000"]);
+  void runLoginFromUi();
+});
+
+el.authCheck.addEventListener("click", () => {
+  void runAuthCheckFromUi();
+});
+
+el.logout.addEventListener("click", () => {
+  void runLogoutFromUi();
 });
 
 el.scrape.addEventListener("click", () => {
@@ -159,6 +179,38 @@ el.stop.addEventListener("click", () => {
 el.exportLog.addEventListener("click", () => {
   void exportSessionLog();
 });
+
+function runLoginFromUi() {
+  setBanner("running", "Waiting for Pinterest login. Complete login in the browser window.");
+  setLoginState("running", "Login in progress...");
+  void runSingleCommand("login", ["login", "--no-prompt", "--timeout-ms", "900000"]);
+}
+
+function runAuthCheckFromUi() {
+  setBanner("running", "Checking Pinterest connection...");
+  setLoginState("running", "Checking saved session...");
+  void runSingleCommand("auth-check", ["auth-check", "--timeout-ms", "30000"]);
+}
+
+function runLogoutFromUi() {
+  const confirmed = window.confirm(
+    [
+      "Disconnect Pinterest from this app?",
+      "",
+      "This deletes .auth/storageState.json used by PinShuffle.",
+      "It does not sign you out globally from Pinterest in other browsers."
+    ].join("\n")
+  );
+
+  if (!confirmed) {
+    appendLog("system", "Disconnect canceled by user.\n");
+    return;
+  }
+
+  setBanner("running", "Disconnecting Pinterest session for this app...");
+  setLoginState("running", "Disconnecting...");
+  void runSingleCommand("logout", ["logout"]);
+}
 
 async function bootstrap() {
   el.stop.disabled = true;
@@ -448,6 +500,25 @@ async function runSingleCommand(name, args, options = {}) {
         finalOk = false;
         setLoginState("error", "Login failed or was canceled.");
         setBanner("error", "Pinterest login failed.");
+      }
+    }
+
+    if (name === "auth-check") {
+      if (ok) {
+        setLoginState("success", "Connection verified.");
+        setBanner("success", "Pinterest connection is valid.");
+      } else {
+        setLoginState("idle", "Not connected. Run Login again.");
+        setBanner("error", "Pinterest connection check failed.");
+      }
+    }
+
+    if (name === "logout") {
+      if (ok) {
+        setLoginState("idle", "Not connected yet.");
+        setBanner("idle", "Pinterest disconnected for this app.");
+      } else {
+        setBanner("error", "Disconnect failed.");
       }
     }
 
