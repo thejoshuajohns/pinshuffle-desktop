@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pinterest Shuffle Desktop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <header class="hero">
+        <h1>Pinterest Shuffle Desktop</h1>
+        <p>Paste one Pinterest board URL and click Run. The app handles login, scrape, shuffle plan, and save.</p>
+      </header>
+
+      <section class="panel simple-panel">
+        <h2>Shuffle a Board</h2>
+        <p class="hint">1) Paste board URL 2) Click Run Shuffle 3) Login when prompted. A fresh destination board is created automatically.</p>
+
+        <label class="field">
+          <span>Source Board URL</span>
+          <input id="simpleSourceUrl" type="text" placeholder="https://www.pinterest.com/user/board/" />
+        </label>
+
+        <div class="row two compact simple-options">
+          <label class="checkbox">
+            <input id="simpleDryRun" type="checkbox" />
+            <span>Preview only (dry run, no saves)</span>
+          </label>
+
+          <div class="destination-preview">
+            <span>Destination board:</span>
+            <code id="simpleDestinationPreview">auto-generated at run time</code>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="simpleRun" class="accent">Run Shuffle</button>
+          <button id="simpleConnect" class="ghost">Connect Pinterest</button>
+          <button id="stop" class="danger">Stop</button>
+        </div>
+
+        <div class="wizard-steps" id="wizardSteps">
+          <span class="step-pill idle" data-step="init">init</span>
+          <span class="step-pill idle" data-step="login">login</span>
+          <span class="step-pill idle" data-step="scrape">scrape</span>
+          <span class="step-pill idle" data-step="plan">plan</span>
+          <span class="step-pill idle" data-step="apply">apply</span>
+        </div>
+
+        <div id="confirmBanner" class="confirm-banner idle">Ready. Paste a board URL, then click Run Shuffle.</div>
+
+        <div class="confirm-grid">
+          <article id="loginCard" class="confirm-card idle">
+            <h3>Pinterest Login</h3>
+            <p id="loginCardText">Not connected yet.</p>
+          </article>
+
+          <article id="runCard" class="confirm-card idle">
+            <h3>Run Status</h3>
+            <p id="runCardText">No run in progress.</p>
+          </article>
+
+          <article id="boardCard" class="confirm-card idle">
+            <h3>Board Result</h3>
+            <p id="boardCardText">No board action yet.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <details id="advancedDetails" class="advanced-details">
+          <summary>Advanced Settings</summary>
+          <p class="hint">For power users: multi-board input, deterministic seeds, speed tuning, diagnostics, and manual step control.</p>
+
+          <label class="field">
+            <span>Source Board URLs (one per line)</span>
+            <textarea id="sourceBoardUrls" rows="4" placeholder="https://www.pinterest.com/user/board/"></textarea>
+          </label>
+
+          <div class="row two">
+            <label class="field">
+              <span>Destination Board Name</span>
+              <div class="inline-field">
+                <input id="destinationBoardName" type="text" placeholder="Inspo Shuffle - 2026-03-01" />
+                <button id="generateBoardName" type="button" class="ghost">Unique Test Name</button>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Seed (optional)</span>
+              <input id="seed" type="text" placeholder="optional deterministic seed" />
+            </label>
+
+            <label class="field">
+              <span>Speed Profile</span>
+              <select id="speedProfile">
+                <option value="conservative">conservative</option>
+                <option value="balanced" selected>balanced</option>
+                <option value="fast">fast</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row four">
+            <label class="field">
+              <span>Pins To Copy</span>
+              <input id="pinsToCopy" type="number" min="1" max="300" value="50" />
+            </label>
+
+            <label class="field">
+              <span>Max Pins To Load</span>
+              <input id="maxPinsToLoad" type="number" min="1" value="200" />
+            </label>
+
+            <label class="field">
+              <span>Delay Min (ms)</span>
+              <input id="delayMin" type="number" min="0" value="250" />
+            </label>
+
+            <label class="field">
+              <span>Delay Max (ms)</span>
+              <input id="delayMax" type="number" min="0" value="900" />
+            </label>
+          </div>
+
+          <div class="row two compact">
+            <label class="checkbox">
+              <input id="copyAllPins" type="checkbox" />
+              <span>Copy all scraped pins</span>
+            </label>
+
+            <label class="checkbox">
+              <input id="loadAllPins" type="checkbox" />
+              <span>Scrape full board (no max-load cap)</span>
+            </label>
+          </div>
+
+          <div class="row three">
+            <label class="field">
+              <span>Batch Size</span>
+              <input id="batchSize" type="number" min="1" value="20" />
+            </label>
+
+            <label class="field">
+              <span>Apply Max Pins (optional)</span>
+              <input id="applyMax" type="number" min="1" placeholder="leave empty for all planned pins" />
+            </label>
+          </div>
+
+          <div class="row two compact">
+            <label class="checkbox">
+              <input id="applyResume" type="checkbox" checked />
+              <span>Resume from state.json</span>
+            </label>
+
+            <label class="checkbox">
+              <input id="applyDryRun" type="checkbox" />
+              <span>Dry Run (do not save pins)</span>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="loadConfig" class="ghost">Load Config</button>
+            <button id="saveConfig" class="primary">Save Config (init)</button>
+            <button id="runAll" class="primary">Run Full Pipeline</button>
+            <button id="login">Login</button>
+            <button id="scrape">Scrape</button>
+            <button id="plan">Plan</button>
+            <button id="diagnose">Diagnose</button>
+            <button id="apply" class="accent">Apply</button>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel">
+        <details id="technicalDetails" class="advanced-details">
+          <summary>Technical Log (Advanced)</summary>
+          <div class="panel-head">
+            <h2>Run Log</h2>
+            <button id="exportLog" class="ghost">Export Session Log</button>
+          </div>
+          <p class="hint">Local only telemetry is stored at <code>debug/desktop-telemetry.jsonl</code>.</p>
+          <pre id="log" class="log"></pre>
+        </details>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,57 @@
+{
+  "name": "pinshuffle-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "main": "desktop/main.js",
+  "description": "CLI tool to scrape Pinterest boards, shuffle pins, and save them into a destination board via Playwright UI automation.",
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "init": "tsx src/cli.ts init",
+    "login": "tsx src/cli.ts login",
+    "scrape": "tsx src/cli.ts scrape",
+    "plan": "tsx src/cli.ts plan",
+    "apply": "tsx src/cli.ts apply",
+    "diagnose": "tsx src/cli.ts diagnose",
+    "build": "tsc -p tsconfig.json",
+    "test:smoke": "npm run build && node --test tests/smoke.test.js",
+    "desktop": "npm run build && electron desktop/main.js",
+    "desktop:dev": "electron desktop/main.js",
+    "desktop:pack": "npm run build && electron-builder --dir",
+    "desktop:dist": "npm run build && electron-builder --mac dmg --publish never"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "playwright": "^1.53.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "electron": "^37.2.0",
+    "electron-builder": "^25.1.8",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "build": {
+    "appId": "com.codex.pinshuffle",
+    "productName": "PinShuffle",
+    "icon": "desktop/assets/icon.png",
+    "asar": true,
+    "files": [
+      "desktop/**/*",
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "README.md"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "icon": "desktop/assets/icon.icns",
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg"
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.auth/
+debug/
+release/
+*.log
+pins.json
+plan.json
+state.json
+config.json
+.DS_Store
+desktop/assets/icon.iconset/
+desktop/assets/icon-1024.png
+desktop/assets/icon-base-with-shuffle.png
