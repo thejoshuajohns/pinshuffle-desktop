@@ -1,59 +1,104 @@
 {
-  "name": "pinshuffle-desktop",
-  "version": "1.0.0",
+  "name": "pinshuffle",
+  "version": "2.0.0",
   "private": true,
-  "main": "desktop/main.js",
-  "description": "CLI tool to scrape Pinterest boards, shuffle pins, and save them into a destination board via Playwright UI automation.",
+  "main": "apps/desktop/dist/main.js",
+  "description": "Deterministic Pinterest board shuffling with a resumable job pipeline, Playwright automation, and an Electron desktop app.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "start": "tsx src/cli.ts",
-    "init": "tsx src/cli.ts init",
-    "login": "tsx src/cli.ts login",
-    "auth-check": "tsx src/cli.ts auth-check",
-    "logout": "tsx src/cli.ts logout",
-    "scrape": "tsx src/cli.ts scrape",
-    "plan": "tsx src/cli.ts plan",
-    "apply": "tsx src/cli.ts apply",
-    "diagnose": "tsx src/cli.ts diagnose",
-    "build": "tsc -p tsconfig.json",
-    "test:smoke": "npm run build && node --test tests/smoke.test.js",
-    "desktop": "npm run build && electron desktop/main.js",
-    "desktop:dev": "electron desktop/main.js",
+    "build": "tsc -b tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('apps/desktop/dist',{recursive:true,force:true});['packages/core','packages/storage','packages/shuffle','packages/pipeline','packages/scraper-sdk','packages/scraper-pinterest','apps/cli','apps/desktop'].forEach((dir)=>require('fs').rmSync(require('path').join(dir,'dist'),{recursive:true,force:true}));\"",
+    "cli": "tsx apps/cli/src/bin.ts",
+    "start": "tsx apps/cli/src/bin.ts run",
+    "run": "tsx apps/cli/src/bin.ts run",
+    "preview": "tsx apps/cli/src/bin.ts preview",
+    "doctor": "tsx apps/cli/src/bin.ts doctor",
+    "init": "tsx apps/cli/src/bin.ts init",
+    "login": "tsx apps/cli/src/bin.ts login",
+    "auth-check": "tsx apps/cli/src/bin.ts auth-check",
+    "logout": "tsx apps/cli/src/bin.ts logout",
+    "scrape": "tsx apps/cli/src/bin.ts scrape",
+    "plan": "tsx apps/cli/src/bin.ts plan",
+    "apply": "tsx apps/cli/src/bin.ts apply",
+    "shuffle": "tsx apps/cli/src/bin.ts shuffle",
+    "diagnose": "tsx apps/cli/src/bin.ts diagnose",
+    "desktop": "npm run build && ELECTRON_RUN_AS_NODE= electron apps/desktop/dist/main.js",
+    "desktop:dev": "npm run desktop",
     "desktop:pack": "npm run build && electron-builder --dir",
-    "desktop:dist": "npm run build && electron-builder --mac dmg --publish never"
+    "desktop:dist": "npm run build && electron-builder --publish never",
+    "desktop:dist:mac": "npm run build && electron-builder --mac dmg --publish never",
+    "desktop:dist:win": "npm run build && electron-builder --win nsis zip --publish never",
+    "lint": "eslint . --ext .ts,.js",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:contracts": "playwright test tests/contracts",
+    "test:smoke": "playwright test tests/smoke"
   },
   "dependencies": {
+    "better-sqlite3": "^11.7.0",
     "commander": "^12.1.0",
-    "playwright": "^1.53.0"
+    "pino": "^9.5.0",
+    "playwright": "^1.53.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
     "electron": "^37.2.0",
     "electron-builder": "^25.1.8",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   },
   "build": {
     "appId": "com.codex.pinshuffle",
     "productName": "PinShuffle",
-    "icon": "desktop/assets/icon.png",
+    "main": "apps/desktop/dist/main.js",
+    "icon": "apps/desktop/assets/icon.png",
     "asar": true,
     "files": [
-      "desktop/**/*",
-      "dist/**/*",
+      "apps/desktop/dist/**/*",
+      "apps/desktop/src/renderer/**/*",
+      "apps/desktop/assets/**/*",
+      "packages/**/dist/**/*",
       "node_modules/**/*",
       "package.json",
-      "README.md"
+      "README.md",
+      "LICENSE"
     ],
     "directories": {
       "output": "release"
     },
     "mac": {
-      "icon": "desktop/assets/icon.icns",
+      "icon": "apps/desktop/assets/icon.icns",
       "category": "public.app-category.productivity",
       "target": [
         "dmg"
       ],
       "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "apps/desktop/assets/icon.png",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }

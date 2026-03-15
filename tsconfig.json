@@ -1,17 +1,15 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
-    "lib": ["ES2022", "DOM"],
-    "strict": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "types": ["node"],
-    "rootDir": "src",
-    "outDir": "dist"
-  },
-  "include": ["src/**/*.ts"]
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/storage" },
+    { "path": "./packages/storage-sqlite" },
+    { "path": "./packages/shuffle" },
+    { "path": "./packages/reorder" },
+    { "path": "./packages/scraper-sdk" },
+    { "path": "./packages/scraper-pinterest" },
+    { "path": "./packages/pipeline" },
+    { "path": "./apps/cli" },
+    { "path": "./apps/desktop" }
+  ]
 }

@@ -1,0 +1,10 @@
+{
+  "name": "@pinshuffle/shuffle",
+  "version": "2.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@pinshuffle/core": "2.0.0"
+  }
+}

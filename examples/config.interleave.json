@@ -1,0 +1,20 @@
+{
+  "sourceBoardUrls": [
+    "https://www.pinterest.com/example/interiors/",
+    "https://www.pinterest.com/example/textiles/",
+    "https://www.pinterest.com/example/lighting/"
+  ],
+  "destinationBoardName": "PinShuffle - Interleave Example",
+  "pinsToCopy": "all",
+  "maxPinsToLoad": 500,
+  "speedProfile": "balanced",
+  "seed": "demo-seed-2026",
+  "delayMsRange": [250, 900],
+  "batchSize": 20,
+  "shuffleStrategy": "board-interleave",
+  "scrapeConcurrency": 2,
+  "publishConcurrency": 1,
+  "loginTimeoutMs": 600000,
+  "authCheckTimeoutMs": 30000,
+  "headless": false
+}

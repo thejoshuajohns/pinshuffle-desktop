@@ -1,0 +1,19 @@
+{
+  "sourceBoardUrls": [
+    "https://www.pinterest.com/example/home-decor/",
+    "https://www.pinterest.com/example/color-study/"
+  ],
+  "destinationBoardName": "PinShuffle - Random Example",
+  "pinsToCopy": 50,
+  "maxPinsToLoad": 200,
+  "speedProfile": "balanced",
+  "seed": null,
+  "delayMsRange": [250, 900],
+  "batchSize": 20,
+  "shuffleStrategy": "random",
+  "scrapeConcurrency": 2,
+  "publishConcurrency": 1,
+  "loginTimeoutMs": 600000,
+  "authCheckTimeoutMs": 30000,
+  "headless": false
+}

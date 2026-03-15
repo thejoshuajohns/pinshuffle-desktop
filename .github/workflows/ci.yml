@@ -1,12 +1,9 @@
 name: CI
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    branches: ["main"]
+  pull_request:
 
 permissions:
   contents: read
@@ -16,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-smoke:
-    name: Build and Smoke Test
+  build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -34,8 +31,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright
+        run: npx playwright install chromium
+
       - name: Build
         run: npm run build
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Contract tests
+        run: npm run test:contracts
 
       - name: Smoke tests
         run: npm run test:smoke

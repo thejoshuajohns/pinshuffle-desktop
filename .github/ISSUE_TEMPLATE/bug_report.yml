@@ -1,0 +1,24 @@
+name: Bug report
+description: Report a pipeline, selector, or desktop issue
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Include the command, config, or desktop flow you used.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Share relevant `.pinshuffle/jobs/<jobId>` paths, screenshots, or selector doctor output.

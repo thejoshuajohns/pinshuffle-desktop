@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "references": [
+    { "path": "../core" },
+    { "path": "../reorder" },
+    { "path": "../scraper-pinterest" },
+    { "path": "../storage" },
+    { "path": "../storage-sqlite" },
+    { "path": "../shuffle" }
+  ],
+  "include": ["src/**/*.ts"]
+}

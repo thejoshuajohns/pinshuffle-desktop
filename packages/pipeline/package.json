@@ -1,0 +1,15 @@
+{
+  "name": "@pinshuffle/pipeline",
+  "version": "2.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@pinshuffle/core": "2.0.0",
+    "@pinshuffle/reorder": "2.0.0",
+    "@pinshuffle/scraper-pinterest": "2.0.0",
+    "@pinshuffle/storage": "2.0.0",
+    "@pinshuffle/storage-sqlite": "2.0.0",
+    "@pinshuffle/shuffle": "2.0.0"
+  }
+}

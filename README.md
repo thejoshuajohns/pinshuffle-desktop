@@ -1,276 +1,145 @@
-<p align="center">
-  <img src="desktop/assets/icon.png" alt="PinShuffle Logo" width="140" />
-</p>
-
 # PinShuffle
 
-> One-click Pinterest board shuffler: paste a board URL, run, and get a fresh shuffled board.
+PinShuffle is a resumable Pinterest board shuffler for people who want to remix inspiration boards without manually re-saving pins one by one.
 
-PinShuffle creates or reuses a destination Pinterest board and saves a randomized order of pins from one or more source boards.
+It uses headed Playwright automation instead of an official Pinterest API, builds a deterministic shuffle plan, and publishes pins through a formal job pipeline that can be resumed after failures.
 
-This tool uses **headed UI automation** (Playwright). There is no stable public Pinterest API path used.
+## What It Does
 
-## Features
+- Scrapes one or more Pinterest boards into checkpointed job artifacts
+- Builds a deterministic shuffle plan with strategy plugins
+- Applies the plan to a destination board with retry and diagnostics support
+- Streams pipeline events to both the CLI and the Electron desktop app
+- Persists resumable jobs under `.pinshuffle/jobs/<jobId>/...`
+- Keeps compatibility mirrors for `config.json`, `pins.json`, `plan.json`, and `state.json`
 
-- `init` creates `config.json`
-- `login` stores Playwright `storageState` after manual login
-- `auth-check` validates whether saved auth state is still authenticated
-- `logout` removes saved Playwright auth state
-- `scrape` captures pins from source board URLs into `pins.json`
-- `plan` shuffles pins (Fisher–Yates + optional seed) into `plan.json`
-- `apply` saves pins in planned order to destination board
-- `diagnose` checks selector health and writes a report to `debug/`
-- `--dry-run` mode prints intended actions without saving
-- `--resume` mode continues from `state.json`
-- Resume safety is keyed by `planHash` so stale state won’t apply to a different plan
-- Retries failed saves up to 3 times and writes screenshots to `debug/`
-- Electron desktop shell that runs the existing CLI commands
+## Demo
 
-## Requirements
+- CLI: `pinshuffle run` streams `auth -> scrape -> plan -> apply` step progress in real time
+- Desktop: the Electron app subscribes to the same typed event bus, showing live step state, recent jobs, cancellation, and recovery-aware reruns
+- Artifacts: every job stores manifests, checkpoints, event logs, and screenshots in `.pinshuffle/jobs/<jobId>/`
 
-- Node.js 18+
-- NPM
+## Architecture
 
-## Install
+```mermaid
+flowchart LR
+  CLI["apps/cli"] --> Runner["PipelineRunner"]
+  Desktop["apps/desktop"] --> Bus["Pipeline Event Bus"]
+  Bus --> Runner
+  Runner --> Steps["Auth / Scrape / Plan / Apply"]
+  Steps --> Core["packages/core"]
+  Steps --> Storage["packages/storage"]
+  Steps --> Shuffle["packages/shuffle"]
+  Steps --> SDK["packages/scraper-sdk"]
+  SDK --> Pinterest["packages/scraper-pinterest"]
+```
+
+- `packages/core`: domain models, config schema, service contracts, pipeline events
+- `packages/storage`: filesystem jobs, checkpoints, artifacts, legacy file mirrors
+- `packages/shuffle`: seed hashing, strategy registry, plan generation
+- `packages/scraper-sdk`: selector fallback helpers, waits, retries, diagnostics primitives
+- `packages/scraper-pinterest`: Pinterest auth, selector catalog, scraper, publisher, doctor
+- `packages/pipeline`: formal job runner and idempotent pipeline steps
+- `apps/cli`: new `run`, `preview`, `doctor` commands plus compatibility aliases
+- `apps/desktop`: Electron shell using typed IPC instead of CLI log parsing
+
+More detail lives in [ARCHITECTURE.md](/Users/joshuajohns/Documents/PinShuffle/ARCHITECTURE.md).
+
+## Quick Start
+
+1. Install dependencies:
 
 ```bash
 npm install
 npx playwright install chromium
 ```
 
-## Quick Start
-
-1) Initialize config:
+2. Create a config:
 
 ```bash
-npm run init -- --source "https://www.pinterest.com/<user>/<board>/" --destination "Inspo Shuffle - 2026-03-01"
+npm run init -- \
+  --source "https://www.pinterest.com/<user>/<board>/" \
+  --destination "Shuffled Board - 2026-03-14" \
+  --strategy board-interleave
 ```
 
-Optional config fields:
-
-- `--pins 50` (default `50`, max `300`) or `--pins all`
-- `--max-load 200` (default `200`) or `--max-load all`
-- `--speed balanced` (`conservative|balanced|fast`; sets delay/batch defaults)
-- `--seed "my-seed"` (optional deterministic runs)
-- `--delay-min 250 --delay-max 900`
-- `--batch-size 20`
-
-2) Log in manually (headed browser):
+3. Connect Pinterest:
 
 ```bash
 npm run login
 ```
 
-3) Scrape source board pins:
+4. Preview or run the full pipeline:
 
 ```bash
-npm run scrape
+npm run preview
+npm run run
 ```
 
-4) Build a deterministic (or random-seeded) plan:
+## CLI Usage
+
+New commands:
 
 ```bash
-npm run plan
+pinshuffle run
+pinshuffle preview
+pinshuffle doctor
 ```
 
-5) Apply plan:
+Compatibility aliases are still available:
 
 ```bash
-npm run apply
+pinshuffle init
+pinshuffle login
+pinshuffle auth-check
+pinshuffle logout
+pinshuffle scrape
+pinshuffle plan
+pinshuffle apply
+pinshuffle diagnose
 ```
 
-Optional selector diagnostics:
+Examples:
 
 ```bash
-npm run diagnose
+pinshuffle run --no-resume
+pinshuffle apply --resume --max 25
+pinshuffle doctor --pin-url "https://www.pinterest.com/pin/<id>/"
 ```
 
-Check whether your saved session is still valid:
+## Desktop App
 
-```bash
-npm run auth-check
-```
-
-## Desktop App Shell
-
-Launch the desktop wrapper:
+Launch the desktop shell:
 
 ```bash
 npm run desktop
 ```
 
-Desktop shell notes:
+Desktop highlights:
 
-- It runs your existing `dist/cli.js` commands under the hood.
-- Default flow is one field + one button: paste board URL and click `Run Shuffle`.
-- `Run Shuffle` auto-generates a fresh destination board name and runs `init -> login -> scrape -> plan -> apply`.
-- `Connect Pinterest` runs `login --no-prompt` so users can pre-authorize once.
-- Login status cards are validated with a live auth probe so stale sessions are not shown as connected.
-- Optional `Preview only` runs dry mode without saving.
-- `Advanced Settings` contains full manual controls, diagnostics, and power-user options.
-- Clear confirmation cards show login status, run status, and board result in plain language.
-- `Unique Test Name` generates a fresh destination board name to avoid collisions.
-- `Copy all scraped pins` and `Scrape full board` toggles enable large-board / uncapped mode from the UI.
-- `Run Full Pipeline` executes `init -> login -> scrape -> plan -> apply` and stops on first failure.
-- `Diagnose` in the desktop UI runs selector health checks and writes a report file.
-- Wizard step chips show live status for `init/login/scrape/plan/apply`.
-- `Stop` sends a SIGTERM to the active CLI process.
-- `Technical Log (Advanced)` is collapsed by default; `Export Session Log` writes it to `debug/desktop-logs/`.
+- Live pipeline step visualization
+- Typed progress events instead of CLI stdout scraping
+- Recent job list with checkpoint-backed recovery
+- Login checks, diagnostics, cancellation, and dry-run previews
 
-## Packaging (Desktop Distribution)
-
-Build unpacked app directory:
+## Testing
 
 ```bash
-npm run desktop:pack
-```
-
-Build macOS DMG:
-
-```bash
-npm run desktop:dist
-```
-
-Icon assets used for packaging live in `desktop/assets/icon.icns` and `desktop/assets/icon.png`.
-
-Run non-browser smoke tests:
-
-```bash
+npm test
+npm run test:contracts
 npm run test:smoke
 ```
 
-## Dry Run / Resume
+## Configuration
 
-Dry run (no Pinterest mutations):
+Validated with `zod`. Example configs live in [examples/config.random.json](/Users/joshuajohns/Documents/PinShuffle/examples/config.random.json) and [examples/config.interleave.json](/Users/joshuajohns/Documents/PinShuffle/examples/config.interleave.json).
 
-```bash
-npm run apply -- --dry-run
-```
+## Contributing
 
-Resume (default behavior):
+Start with [CONTRIBUTING.md](/Users/joshuajohns/Documents/PinShuffle/CONTRIBUTING.md), then read [ROADMAP.md](/Users/joshuajohns/Documents/PinShuffle/ROADMAP.md) and [ARCHITECTURE.md](/Users/joshuajohns/Documents/PinShuffle/ARCHITECTURE.md) before opening a large PR.
 
-```bash
-npm run apply -- --resume
-```
+## Safety Notes
 
-Ignore previous state and start from pin 1:
-
-```bash
-npm run apply -- --no-resume
-```
-
-Only process first N planned pins (useful for MVP validation):
-
-```bash
-npm run apply -- --max 10
-```
-
-## Generated Files
-
-- `config.json` user settings
-- `.auth/storageState.json` authenticated browser state
-- `pins.json` scraped + deduplicated pin list
-- `plan.json` shuffled selected pins, seed used, and `planHash`
-- `state.json` apply progress (`index`, `savedIds`, `failures`, `planHash`)
-- `debug/*.png` failure screenshots
-- `debug/selector-health-*.json` selector diagnostics reports
-- `debug/desktop-telemetry.jsonl` local desktop command telemetry (run metadata only)
-- `debug/desktop-logs/*.log` exported desktop session logs
-
-## Command Reference
-
-### `init`
-
-Creates `config.json` with:
-
-```json
-{
-  "sourceBoardUrls": ["https://www.pinterest.com/<user>/<board>/"],
-  "destinationBoardName": "Inspo Shuffle - 2026-03-01",
-  "speedProfile": "balanced",
-  "pinsToCopy": 50,
-  "maxPinsToLoad": 200,
-  "seed": null,
-  "delayMsRange": [250, 900],
-  "batchSize": 20
-}
-```
-
-### `login`
-
-- Opens Pinterest login page in headed mode.
-- You log in manually.
-- Terminal mode: press Enter, then login is verified before storage state is persisted.
-- Desktop mode (or CLI with `--no-prompt`): session is auto-detected and saved.
-
-### `auth-check`
-
-- Uses `.auth/storageState.json`.
-- Opens a short headless probe to verify Pinterest still accepts the session.
-- Exits non-zero if auth is missing/expired/logged out.
-
-### `logout`
-
-- Deletes `.auth/storageState.json`.
-- Useful if you want to force a clean re-login.
-
-### `scrape`
-
-- Visits each `sourceBoardUrls` entry.
-- Scrolls until `maxPinsToLoad`, or until end-of-board signals are detected.
-- Extracts unique pin IDs/URLs and optional title/image metadata.
-- Deduplicates across all source boards by pin ID.
-- Writes incremental progress snapshots to `pins.json` during long runs.
-
-### `plan`
-
-- Loads `pins.json`.
-- Uses Fisher–Yates shuffle.
-- If `seed` exists in config, run is deterministic.
-- If no seed in config, runtime seed is generated and written to `plan.json`.
-- Supports `pinsToCopy: \"all\"` to include all available scraped pins.
-
-### `apply`
-
-- Reads `plan.json`.
-- Ensures destination board exists via Create flow or Save-flow fallback.
-- Saves each pin URL in planned order.
-- Retries each failed save up to 3 times.
-- Writes progress to `state.json` after each pin success/final failure.
-- Resume only continues when destination board and `planHash` both match.
-
-### `diagnose`
-
-- Opens Pinterest in headed mode.
-- Checks key selector groups for home/create/save flows with fallback selectors.
-- Uses `--pin-url` if provided, otherwise first pin from `plan.json`/`pins.json`.
-- Writes report JSON to `debug/selector-health-*.json`.
-
-## Reliability Notes
-
-- Uses role/text selectors with fallbacks.
-- Adds randomized delays between actions.
-- Supports conservative/balanced/fast speed presets.
-- Stops with a clear error when block/rate-limit patterns are detected.
-- Pinterest UI changes can still break selectors; `src/selectors.ts` is centralized for updates.
-
-## Limitations
-
-- UI automation is inherently brittle against major Pinterest UI redesigns.
-- Public boards usually scrape without login, but private boards require logged-in state.
-- Save confirmation signals differ by account/locale; verification is best effort.
-
-## Troubleshooting
-
-- Missing auth state: run `npm run login`.
-- Session validity check: run `npm run auth-check`.
-- Clear saved auth state: run `npm run logout`.
-- Empty `pins.json`: increase `maxPinsToLoad` and verify source board URL.
-- Frequent save failures: lower run intensity via higher delay range.
-- Repeated rate-limit messages: stop and retry later; do not brute-force retries.
-- Selector breakage after Pinterest UI changes: run `npm run diagnose` and update `src/selectors.ts`.
-
-## Security
-
-- The tool never asks for, reads, or stores your password.
-- Authentication is stored only as Playwright browser session state in `.auth/storageState.json`.
+- Pinterest UI automation is inherently brittle; selector contracts and diagnostics help, but upstream UI changes can still break flows.
+- Use `preview` or `--dry-run` when validating new configs or selectors.
+- Respect Pinterest rate limits and account safety boundaries.

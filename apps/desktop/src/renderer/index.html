@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PinShuffle Desktop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="window-shell">
+      <section class="utility-window">
+        <header class="window-header">
+          <div class="brand-mark" aria-hidden="true">PS</div>
+          <div class="header-copy">
+            <p class="eyebrow">PinShuffle Desktop</p>
+            <h1>Shuffle a Pinterest Board</h1>
+            <p class="subtitle">
+              Paste a board URL, pick a shuffle strategy, and save your
+              shuffled pins to a brand new board.
+            </p>
+          </div>
+        </header>
+
+        <form id="shuffleForm" class="form-stack">
+          <article id="selectedBoardCard" class="selected-board" hidden>
+            <span>Board to shuffle</span>
+            <strong id="selectedBoardName">No board selected yet</strong>
+            <small id="selectedBoardUrl"></small>
+          </article>
+
+          <label id="boardUrlField" class="field">
+            <span>Board URL</span>
+            <input
+              id="boardUrl"
+              type="url"
+              placeholder="https://www.pinterest.com/user/board/"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <small class="field-hint">
+              Paste the Pinterest board link you want to shuffle.
+            </small>
+          </label>
+
+          <button
+            id="manualBoardToggle"
+            class="text-button"
+            type="button"
+            hidden
+          >
+            Paste board link instead
+          </button>
+
+          <button
+            id="changeBoardButton"
+            class="text-button"
+            type="button"
+            hidden
+          >
+            Choose a different board
+          </button>
+
+          <label id="newBoardNameField" class="field" hidden>
+            <span>New Board Name</span>
+            <input
+              id="newBoardName"
+              type="text"
+              placeholder="e.g. My Board Shuffled"
+              maxlength="180"
+            />
+            <small class="field-hint">
+              Shuffled pins will be saved to a new board with this name. Your original board stays untouched.
+            </small>
+          </label>
+
+          <label id="strategyField" class="field" hidden>
+            <span>Shuffle Strategy</span>
+            <div class="strategy-options">
+              <label class="strategy-option">
+                <input type="radio" name="strategy" value="random" checked />
+                <div>
+                  <strong>Random</strong>
+                  <small>Fully random shuffle using Fisher-Yates.</small>
+                </div>
+              </label>
+              <label class="strategy-option">
+                <input type="radio" name="strategy" value="reverse" />
+                <div>
+                  <strong>Reverse</strong>
+                  <small>Flip the entire board order.</small>
+                </div>
+              </label>
+              <label class="strategy-option">
+                <input type="radio" name="strategy" value="interleave-clusters" />
+                <div>
+                  <strong>Interleave Clusters</strong>
+                  <small>Spread visually similar pins apart.</small>
+                </div>
+              </label>
+              <label class="strategy-option">
+                <input type="radio" name="strategy" value="deterministic-seed" />
+                <div>
+                  <strong>Seeded Shuffle</strong>
+                  <small>Reproducible shuffle with a custom seed.</small>
+                </div>
+              </label>
+              <label class="strategy-option">
+                <input type="radio" name="strategy" value="recency-balance" />
+                <div>
+                  <strong>Recency Balance</strong>
+                  <small>Interleave recent and older pins.</small>
+                </div>
+              </label>
+              <label class="strategy-option">
+                <input type="radio" name="strategy" value="visual-cluster" />
+                <div>
+                  <strong>Visual Cluster</strong>
+                  <small>Group by image source and title keywords.</small>
+                </div>
+              </label>
+            </div>
+          </label>
+
+          <label id="seedField" class="field" hidden>
+            <span>Shuffle Seed (Optional)</span>
+            <input
+              id="shuffleSeed"
+              type="text"
+              placeholder="Enter a seed for reproducible results"
+              maxlength="120"
+            />
+            <small class="field-hint">
+              Same seed + same pins = same shuffle order every time.
+            </small>
+          </label>
+
+          <div id="previewPanel" class="preview-panel" hidden>
+            <div class="preview-header">
+              <strong>Shuffle Preview</strong>
+              <small id="previewCount">0 pins</small>
+            </div>
+            <ol id="previewList" class="preview-list"></ol>
+          </div>
+
+          <div id="actionButtons" class="action-buttons">
+            <button id="previewAction" class="secondary-button" type="button" hidden>
+              Preview Shuffle
+            </button>
+            <button id="primaryAction" class="primary-button" type="submit">
+              Connect Pinterest
+            </button>
+          </div>
+
+          <p id="formHint" class="form-hint">
+            Connect Pinterest first, then paste the board URL you want to shuffle.
+          </p>
+        </form>
+
+        <section
+          id="statusPanel"
+          class="status-panel idle"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <div class="status-copy">
+            <p id="statusEyebrow" class="status-eyebrow">Step 1</p>
+            <h2 id="statusTitle" class="status-title">
+              Connect Pinterest first
+            </h2>
+            <p id="statusMessage" class="status-message">
+              Sign in first, then paste the board URL you want to shuffle.
+            </p>
+          </div>
+
+          <ol id="progressList" class="progress-list" hidden>
+            <li class="progress-step pending" data-step="auth">
+              <span class="step-dot" aria-hidden="true"></span>
+              <div>
+                <strong>Authenticating</strong>
+                <small>Verifying your Pinterest session.</small>
+              </div>
+            </li>
+            <li class="progress-step pending" data-step="fetch">
+              <span class="step-dot" aria-hidden="true"></span>
+              <div>
+                <strong>Fetching pins</strong>
+                <small>Capturing board data via network interception.</small>
+              </div>
+            </li>
+            <li class="progress-step pending" data-step="shuffle">
+              <span class="step-dot" aria-hidden="true"></span>
+              <div>
+                <strong>Generating order</strong>
+                <small>Computing new pin positions.</small>
+              </div>
+            </li>
+            <li class="progress-step pending" data-step="save">
+              <span class="step-dot" aria-hidden="true"></span>
+              <div>
+                <strong>Saving to new board</strong>
+                <small>Copying pins in shuffled order to the new board.</small>
+              </div>
+            </li>
+          </ol>
+
+          <div id="successActions" class="success-actions" hidden>
+            <button id="openBoardButton" class="secondary-button" type="button">
+              Open New Board on Pinterest
+            </button>
+            <button
+              id="shuffleAnotherButton"
+              class="ghost-button"
+              type="button"
+            >
+              Shuffle Another Board
+            </button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  desktop-release:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            build_command: npm run desktop:dist:mac
+            release_files: release/*.dmg
+          - os: windows-latest
+            build_command: npm run desktop:dist:win
+            release_files: |
+              release/*.exe
+              release/*.zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install
+      - run: npm run build
+      - run: ${{ matrix.build_command }}
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.release_files }}

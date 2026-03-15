@@ -1,0 +1,19 @@
+{
+  "name": "@pinshuffle/cli",
+  "version": "2.0.0",
+  "private": true,
+  "main": "dist/bin.js",
+  "types": "dist/bin.d.ts",
+  "bin": {
+    "pinshuffle": "dist/bin.js"
+  },
+  "dependencies": {
+    "@pinshuffle/core": "2.0.0",
+    "@pinshuffle/pipeline": "2.0.0",
+    "@pinshuffle/reorder": "2.0.0",
+    "@pinshuffle/scraper-pinterest": "2.0.0",
+    "@pinshuffle/shuffle": "2.0.0",
+    "@pinshuffle/storage": "2.0.0",
+    "@pinshuffle/storage-sqlite": "2.0.0"
+  }
+}
